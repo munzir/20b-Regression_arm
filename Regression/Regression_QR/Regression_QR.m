@@ -1,8 +1,8 @@
 
 % Load data (q,qdot,qdotdot,torque) available online and save it
-A=load('sarcos_inv.mat');
+A=load('sarcos2.mat');
 
-B=A.sarcos_inv;
+B=A.sar;
 
 all_q=B(1:1000,1:7);
 
@@ -24,24 +24,21 @@ T=[];
 % all_torque=load('dataTorque.txt');
 
 % Unwrap q,dq,dqq,all_torque into understandable parameters
-
 for i = 1:1000
    q=all_q(i,:);
    dq=all_dq(i,:);
    dqq=all_dqq(i,:);
    
-   ph=PHI(q,dq,dqq);
+   ph=PHI_70(q,dq,dqq);
    phi_mat=[W;ph];
    
    W=phi_mat;
-   
    
    ta=all_torque(i,:)';
    
    tau=[T;ta];
    
    T=tau;
-   
 end
 
 [m,n]=size(phi_mat);
@@ -103,8 +100,6 @@ R1=zeros(m,size(n_ind,1));
 
 R2=zeros(m,size(n_dep,1));
 
-
-
 for i=1:size(n_ind)
     R1(:,i)=phi_mat(:,n_ind(i));
 end
@@ -125,12 +120,7 @@ R2_new=R_new(1:r,r+1:p);
 ABC=inv(R1_new)*R2_new;
 
 
-
-
 %%%
-
-
-
 % ic=zeros(n,1);
 % 
 % for i =1:n

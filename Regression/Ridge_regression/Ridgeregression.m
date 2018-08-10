@@ -1,19 +1,16 @@
 
 % Load data (q,qdot,qdotdot,torque) available online and save it
-A=load('sarcos_inv.mat');
+A=load('sarcos2.mat');
 
-B=A.sarcos_inv;
+B=A.sar;
 
-all_q=B(1:3000,1:7);
-
-all_dq=B(1:3000,8:14);
-
-all_dqq=B(1:3000,15:21);
-
-all_torque=B(1:3000,22:28);
+[row, col] = size(B);
+all_q=B(1:row,1:7);
+all_dq=B(1:row,8:14);
+all_dqq=B(1:row,15:21);
+all_torque=B(1:row,22:28);
 
 W=[];
-
 T=[];
 
 % Load data from simulation
@@ -25,7 +22,7 @@ T=[];
 
 % Unwrap q,dq,dqq,all_torque into understandable parameters
 
-for i = 1:3000
+for i = 1:row
    q=all_q(i,:);
    dq=all_dq(i,:);
    dqq=all_dqq(i,:);
@@ -34,7 +31,6 @@ for i = 1:3000
    phi_mat=[W;ph];
    
    W=phi_mat;
-   
    
    ta=all_torque(i,:)';
    
@@ -54,11 +50,14 @@ std_param=linspace(1,n,n);
 
 r=rank(phi_mat);
 
-rr=phi_mat'*phi_mat;
-e=eig(rr);
-min_e=min(e);
+% rr=phi_mat'*phi_mat;
+% e=eig(rr);
+% min_e=min(e);
 ridge=(phi_mat'*phi_mat)+(1e-5*eye(70));
 param=pinv(ridge)*phi_mat'*tau;
+
+%Nicer format for params
+paramMat = [param(1:10) param(11:20) param(21:30) param(31:40) param(41:50) param(51:60) param(61:70)];
 
 %%%
 
