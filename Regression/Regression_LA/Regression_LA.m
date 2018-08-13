@@ -1,41 +1,49 @@
+clear
+clc
 
-% Load data (q,qdot,qdotdot,torque) available online and save it
+% Load data
 A=load('sarcos2.mat');
-
 B=A.sar;
 [row, col] = size(B);
 
-all_q=B(1:row,1:7);
-
-all_dq=B(1:row,8:14);
-
-all_dqq=B(1:row,15:21);
-
-all_torque=B(1:row,22:28);
+phi_mat = load('C:/Users/Areeb Mehmood/Desktop/phifile_comp');
+all_curr=B(1:row,22:28);
+% Create holder for all_torques
+all_torque = all_curr*0;
 
 W=[];
-
 T=[];
 
-% Load data from simulation
+km(1) = 31.4e-3;
+km(2) = 31.4e-3;
+km(3) = 38e-3;
+km(4) = 38e-3;
+km(5) = 16e-3;
+km(6) = 16e-3;
+km(7) = 16e-3;
 
-% all_q=load('dataQ_train.txt');
-% all_dq=load('dataQdot_train.txt');
-% all_dqq=load('dataQdotdot_train.txt');
-% all_torque=load('dataTorque_train.txt');
-% 
-% 
-% % Unwrap q,dq,dqq,all_torque into understandable parameters
-% 
+G_R(1) = 596;
+G_R(2) = 596;
+G_R(3) = 625;
+G_R(4) = 625;
+G_R(5) = 552;
+G_R(6) = 552;
+G_R(7) = 552;
+
+% Convert currents to torques
 for i = 1:row
-   q=all_q(i,:);
-   dq=all_dq(i,:);
-   dqq=all_dqq(i,:);
-   
-   ph=PHI(q,dq,dqq);
-   phi_mat=[W;ph];
-   
-   W=phi_mat;
+        all_torque(i,:) = all_curr(i,:).*km.*G_R;
+end
+
+for i = 1:row
+%    q=all_q(i,:);
+%    dq=all_dq(i,:);
+%    dqq=all_dqq(i,:);
+%    
+%    ph=PHI(q,dq,dqq);
+%    phi_mat=[W;ph];
+%    
+%    W=phi_mat;
    
    
    ta=all_torque(i,:)';

@@ -1,64 +1,89 @@
+clear;
+clc;
 
-% Load data (q,qdot,qdotdot,torque) available online and save it
-A=load('sarcos2.mat');
+all_curr = load('C:/Users/Areeb Mehmood/Desktop/dataCur_NF.txt');
+phi_mat = load('C:/Users/Areeb Mehmood/Desktop/phifile_comp2');
+% beta_k contains Mass and COM parameters that we estimated from COM experiments
+% Treating these values as known (beta_k)
+beta_k = load('C:/Users/Areeb Mehmood/Desktop/betaK.txt'); 
+[row, col] = size(all_curr);
 
-B=A.sar;
-
-[row, col] = size(B);
-all_q=B(1:row,1:7);
-all_dq=B(1:row,8:14);
-all_dqq=B(1:row,15:21);
-all_torque=B(1:row,22:28);
+% Create holder for all_torques
+all_torque = all_curr*0;
 
 W=[];
 T=[];
 
-% Load data from simulation
+% km = zeros(7,1);
+km(1) = 31.4e-3;
+km(2) = 31.4e-3;
+km(3) = 38e-3;
+km(4) = 38e-3;
+km(5) = 16e-3;
+km(6) = 16e-3;
+km(7) = 16e-3;
 
-% all_q=load('dataQ.txt');
-% all_dq=load('dataQdot.txt');
-% all_dqq=load('dataQdotdot.txt');
-% all_torque=load('dataTorque.txt');
+G_R(1) = 596;
+G_R(2) = 596;
+G_R(3) = 625;
+G_R(4) = 625;
+G_R(5) = 552;
+G_R(6) = 552;
+G_R(7) = 552;
 
-% Unwrap q,dq,dqq,all_torque into understandable parameters
-
+% Convert currents to torques
 for i = 1:row
-   q=all_q(i,:);
-   dq=all_dq(i,:);
-   dqq=all_dqq(i,:);
-   
-   ph=PHI(q,dq,dqq);
-   phi_mat=[W;ph];
-   
-   W=phi_mat;
-   
-   ta=all_torque(i,:)';
-   
-   tau=[T;ta];
-   
-   T=tau;
-   
+        all_torque(i,:) = all_curr(i,:).*km.*G_R;
 end
 
-[m,n]=size(phi_mat);
+% Stack <#datapoints> rows of <7> torques into one <7>*<#datapoints> column
+for i = 1:row
+   ta=all_torque(i,:)';
+   tau=[T;ta];
+   T=tau;
+end
 
+phi_k = [];
+phi_u = [];
+% Separate phi_k and phi_u out of phi_mat
+for i=1:13:91
+   phi_k = [phi_k  phi_mat(:,i) phi_mat(:,i+1) phi_mat(:,i+2) phi_mat(:,i+3)];
+end
+for i=5:13:91
+   phi_u = [phi_u  phi_mat(:,i) phi_mat(:,i+1) phi_mat(:,i+2) phi_mat(:,i+3) phi_mat(:,i+4) phi_mat(:,i+5) phi_mat(:,i+6) phi_mat(:,i+7) phi_mat(:,i+8)];
+end
+
+% Subtracting known phi*beta from existing tau to get tau_prime
+tau_prime = tau - phi_k*beta_k';
+
+% Running regression on unknown betas
+ridge_u = (phi_u'*phi_u);
+beta_u = pinv(ridge_u)*phi_u'*tau_prime;
+
+% Putting known and calculated beta parameters in single vector
+betaVec = zeros(91,1);
+for i=0:6
+   betaVec(13*i+1:13*i+13) = [beta_k(4*i+1:4*i+4)'; beta_u(9*i+1:9*i+9)];
+end
+
+betaVec = betaVec';
+save('C:/Users/Areeb Mehmood/Desktop/betaVec.txt','betaVec','-ascii');
+
+% ridge=(phi_mat'*phi_mat);%+(1e-5*eye(n));
+% param=pinv(ridge)*phi_mat'*tau;
+% % Matrix format for params 
+% paramMat = [param(1:13) param(14:26) param(27:39) param(40:52) param(53:65) param(66:78) param(79:91)]
 
 % std_param is the numerical value of parameters with '1' being M1 '2'
 % being 'MX1' and so on...
 
-std_param=linspace(1,n,n);
+% std_param=linspace(1,n,n);
 
-r=rank(phi_mat);
+% r=rank(phi_mat);
 
 % rr=phi_mat'*phi_mat;
 % e=eig(rr);
 % min_e=min(e);
-ridge=(phi_mat'*phi_mat)+(1e-5*eye(70));
-param=pinv(ridge)*phi_mat'*tau;
-
-%Nicer format for params
-paramMat = [param(1:10) param(11:20) param(21:30) param(31:40) param(41:50) param(51:60) param(61:70)];
-
 %%%
 
 % [Q,R]=qr(phi_mat);
